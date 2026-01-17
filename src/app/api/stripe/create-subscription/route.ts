@@ -66,26 +66,39 @@ export async function POST(req: NextRequest) {
     });
 
     // Properly handle expanded types
-    const latestInvoice = subscription.latest_invoice as any;
+    let latestInvoice = subscription.latest_invoice as any;
     
-    console.log("Subscription created:", {
+    if (typeof latestInvoice === "string") {
+      console.log("Invoice not expanded, fetching manually...");
+      latestInvoice = await stripe.invoices.retrieve(latestInvoice, {
+        expand: ["payment_intent"],
+      });
+    }
+
+    console.log("Subscription details:", {
       id: subscription.id,
       status: subscription.status,
-      latestInvoiceId: typeof subscription.latest_invoice === "string" ? subscription.latest_invoice : subscription.latest_invoice?.id,
+      invoiceId: latestInvoice?.id,
       amountDue: latestInvoice?.amount_due,
-      paymentIntentId: latestInvoice?.payment_intent?.id || latestInvoice?.payment_intent
+      total: latestInvoice?.total,
+      paymentIntentId: typeof latestInvoice?.payment_intent === "string" ? latestInvoice.payment_intent : latestInvoice?.payment_intent?.id,
+      hasPaymentIntent: !!latestInvoice?.payment_intent
     });
 
-    if (!latestInvoice || typeof latestInvoice === "string") {
-      console.error("Latest invoice missing or not expanded:", latestInvoice);
+    if (!latestInvoice) {
       return NextResponse.json({ error: "Failed to retrieve subscription invoice" }, { status: 500 });
     }
 
-    const paymentIntent = latestInvoice.payment_intent;
+    let paymentIntent = latestInvoice.payment_intent;
 
-    if (!paymentIntent || typeof paymentIntent === "string") {
+    // If payment intent is still a string, retrieve it
+    if (typeof paymentIntent === "string") {
+      paymentIntent = await stripe.paymentIntents.retrieve(paymentIntent);
+    }
+
+    if (!paymentIntent) {
       // If payment intent is missing, it might be a $0 invoice or trial
-      if (latestInvoice.amount_due === 0) {
+      if (latestInvoice.amount_due === 0 || latestInvoice.total === 0) {
         return NextResponse.json({
           subscriptionId: subscription.id,
           clientSecret: null, // No payment needed now
@@ -93,7 +106,11 @@ export async function POST(req: NextRequest) {
         });
       }
       
-      console.error("Payment intent missing or not expanded:", paymentIntent);
+      console.error("Payment intent missing for non-zero invoice:", {
+        amountDue: latestInvoice.amount_due,
+        total: latestInvoice.total,
+        invoiceId: latestInvoice.id
+      });
       return NextResponse.json({ error: "Failed to create payment intent" }, { status: 500 });
     }
 
