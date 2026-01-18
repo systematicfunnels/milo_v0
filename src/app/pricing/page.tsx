@@ -15,7 +15,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { SUBSCRIPTION_TIERS } from "@/lib/subscription-tiers";
 import { useLocationCurrency } from "@/hooks/useLocationCurrency";
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "pk_test_placeholder");
 
 interface Plan {
   id: string;

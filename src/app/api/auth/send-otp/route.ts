@@ -47,7 +47,14 @@ export async function POST(request: NextRequest) {
       devOtp: process.env.NODE_ENV === "development" ? otp : undefined
     });
   } catch (error) {
-    console.error("Send OTP error:", error);
-    return NextResponse.json({ error: "Failed to send OTP" }, { status: 500 });
+    console.error("Send OTP error details:", {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      error
+    });
+    return NextResponse.json({ 
+      error: "Failed to send OTP",
+      details: process.env.NODE_ENV === "development" ? (error instanceof Error ? error.message : String(error)) : undefined
+    }, { status: 500 });
   }
 }
