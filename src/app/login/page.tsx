@@ -128,23 +128,15 @@ export default function LoginPage() {
                     type="email"
                     placeholder={t.login.emailPlaceholder}
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (receivedOtp) setReceivedOtp(null);
+                    }}
                     className="pl-10 bg-secondary/50 border-border focus:border-indigo-500"
                     required
                   />
                 </div>
               </div>
-
-              {receivedOtp && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-center"
-                >
-                  <p className="text-xs text-indigo-400 uppercase tracking-wider font-semibold mb-1">Your Login Code</p>
-                  <p className="text-2xl font-mono font-bold text-indigo-500 tracking-[0.5em] ml-[0.5em]">{receivedOtp}</p>
-                </motion.div>
-              )}
 
               <Button
                 type="submit"
@@ -186,6 +178,17 @@ export default function LoginPage() {
                   </InputOTP>
                 </div>
               </div>
+
+              {receivedOtp && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-center"
+                >
+                  <p className="text-xs text-indigo-400 uppercase tracking-wider font-semibold mb-1">Your Login Code</p>
+                  <p className="text-2xl font-mono font-bold text-indigo-500 tracking-[0.5em] ml-[0.5em]">{receivedOtp}</p>
+                </motion.div>
+              )}
 
               <Button
                 type="submit"

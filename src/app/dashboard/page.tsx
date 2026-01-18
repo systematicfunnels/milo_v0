@@ -146,10 +146,18 @@ export default function DashboardPage() {
     fetchSubscription();
   }, [fetchUser, fetchReminders, fetchSubscription]);
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
+    // Clear all client-side state
     localStorage.removeItem("auth_token");
-    document.cookie = "auth_token=; path=/; max-age=0";
-    router.push("/");
+    document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0";
+    
+    // Reset local state
+    setUser(null);
+    setReminders([]);
+    setSubscription(null);
+    
+    // Force a full page reload to the home page to ensure all state is wiped
+    window.location.href = "/";
   };
 
   const handleSaveBotName = async () => {
