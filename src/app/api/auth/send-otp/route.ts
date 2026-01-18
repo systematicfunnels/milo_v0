@@ -7,11 +7,13 @@ function generateOtp(): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { email } = await request.json();
+    let { email } = await request.json();
     
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
+
+    email = email.toLowerCase().trim();
 
     const supabase = await createServiceClient();
     const otp = generateOtp();
@@ -24,19 +26,23 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (existingUser) {
-      await supabase
+      const { error: updateError } = await supabase
         .from("users")
         .update({
           otp_code: otp,
           otp_expires_at: otpExpiresAt.toISOString(),
         })
         .eq("email", email);
+      
+      if (updateError) throw updateError;
     } else {
-      await supabase.from("users").insert({
+      const { error: insertError } = await supabase.from("users").insert({
         email,
         otp_code: otp,
         otp_expires_at: otpExpiresAt.toISOString(),
       });
+
+      if (insertError) throw insertError;
     }
 
     console.log(`OTP for ${email}: ${otp}`);

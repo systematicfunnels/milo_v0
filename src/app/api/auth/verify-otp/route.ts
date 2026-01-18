@@ -3,11 +3,13 @@ import { createServiceClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, otp } = await request.json();
+    let { email, otp } = await request.json();
     
     if (!email || !otp) {
       return NextResponse.json({ error: "Email and OTP are required" }, { status: 400 });
     }
+
+    email = email.toLowerCase().trim();
 
     const supabase = await createServiceClient();
 
@@ -18,14 +20,17 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error || !user) {
+      console.error(`Verification failed: User not found for email ${email}`);
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     if (user.otp_code !== otp) {
+      console.error(`Verification failed: Invalid OTP for ${email}. Expected ${user.otp_code}, got ${otp}`);
       return NextResponse.json({ error: "Invalid OTP" }, { status: 400 });
     }
 
     if (new Date(user.otp_expires_at) < new Date()) {
+      console.error(`Verification failed: OTP expired for ${email}.`);
       return NextResponse.json({ error: "OTP expired" }, { status: 400 });
     }
 
